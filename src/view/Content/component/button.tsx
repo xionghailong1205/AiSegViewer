@@ -6,7 +6,7 @@ import {
     TooltipTrigger,
 } from '@/view/ui/tooltip'
 
-const Button = (
+const IconButton = (
     {
         tool
     }: {
@@ -40,4 +40,4 @@ const Button = (
     )
 }
 
-export default Button
+export default IconButton

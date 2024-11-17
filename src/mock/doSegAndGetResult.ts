@@ -6,7 +6,7 @@ interface SEGResult {
 
 export interface DataForSegAI {
   referenceStudyUID: string;
-  sliceIndx: number;
+  sliceIndex: number;
   top: number;
   left: number;
   width: number;

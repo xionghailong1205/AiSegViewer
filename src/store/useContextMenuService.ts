@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { annotation } from "@cornerstonejs/tools";
-import { getSEGService } from "@/service/segService";
+import { getSEGService, viewportIds } from "@/service/segService";
+import { getAnnotationManager } from "@cornerstonejs/tools/annotation/annotationState";
 
 const { removeAnnotation } = annotation.state;
 
@@ -24,6 +25,7 @@ interface action {
   ) => void;
   closeContextMenu: () => void;
   removeSelectedAnnotation: () => void;
+  doAiSeg: () => void;
 }
 
 interface ContextMenuServiceProp extends state, action {}
@@ -52,6 +54,43 @@ export const useContextMenuService = create<ContextMenuServiceProp>(
       const renderingEngine = getSEGService().renderingEngine;
 
       renderingEngine.render();
+    },
+    doAiSeg() {
+      const idOfSelectedAnnotation = get().idOfSelectedAnnotation;
+
+      const segService = getSEGService();
+
+      const axialViewport = segService.renderingEngine.getViewport(
+        viewportIds.MPR.AXIAL
+      )!;
+
+      const sliceIndex = axialViewport.getCurrentImageIdIndex();
+
+      const annotationManager = getAnnotationManager();
+      const selectedAnnotation = annotationManager.getAnnotation(
+        idOfSelectedAnnotation
+      );
+
+      const topRightPoint = selectedAnnotation.data.handles.points[0].slice(
+        0,
+        2
+      );
+      const bottomLeftPoint = selectedAnnotation.data.handles.points[3].slice(
+        0,
+        2
+      );
+
+      const width = bottomLeftPoint[0] - topRightPoint[0];
+      const height = bottomLeftPoint[1] - topRightPoint[1];
+
+      segService.addSegData({
+        referenceStudyUID: StudyInstanceUID,
+        sliceIndex,
+        left: topRightPoint[0],
+        top: topRightPoint[1],
+        width,
+        height,
+      });
     },
   })
 );

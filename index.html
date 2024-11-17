@@ -1,13 +1,32 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- 获取查询参数 -->
+
+  <script>
+    const defaultQueryParam = {
+      studyId: "1.2.840.31314.14143234.20160621082358.3303189",
+      serieId: "1.3.46.670589.11.42556.5.0.5368.2016062111130713198"
+    }
+
+    const StudyInstanceUID = new URLSearchParams(window.location.search).get("StudyInstanceUID") ?? defaultQueryParam.studyId
+    const SeriesInstanceUID = new URLSearchParams(window.location.search).get("SeriesInstanceUID") ?? defaultQueryParam.serieId
+
+    window.StudyInstanceUID = StudyInstanceUID
+    window.SeriesInstanceUID = SeriesInstanceUID
+
+  </script>
+
+  <title>Vite + React + TS</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

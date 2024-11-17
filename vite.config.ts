@@ -52,4 +52,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      "/dicomweb": {
+        target: "http://38.12.43.20:8042/",
+        rewrite: (path) => {
+          return path.replace(/^\/dicomweb/, "dicom-web");
+        },
+      },
+    },
+  },
 });

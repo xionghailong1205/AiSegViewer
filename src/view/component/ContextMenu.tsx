@@ -52,7 +52,8 @@ const AiSegButton = () => {
                     <MenuItem
                         className="bg-[#293245] w-[130px] outline-none text-white py-[10px] px-[15px] hover:bg-[#3159d6]"
                         onClick={() => {
-                            alert("执行相关逻辑")
+                            const doAiSeg = useContextMenuService.getState().doAiSeg
+                            doAiSeg()
                         }}
                     >
                         进行AI分割

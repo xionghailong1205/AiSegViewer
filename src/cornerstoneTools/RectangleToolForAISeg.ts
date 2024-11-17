@@ -654,7 +654,7 @@ class RectangleToolForAISeg extends AnnotationTool {
         continue;
       }
 
-      const textLines = this.configuration.getTextLines(data, targetId);
+      const textLines = this.configuration.getTextLines(data, viewport);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -721,13 +721,16 @@ class RectangleToolForAISeg extends AnnotationTool {
  * @param data - The annotation tool-specific data.
  * @param targetId - The volumeId of the volume to display the stats for.
  */
-function defaultGetTextLines(data, targetId: string): string[] {
+function defaultGetTextLines(data, viewport): string[] {
   const points = data.handles.points;
 
   const textLines: string[] = [];
 
-  textLines.push(`右上角点: ${roundNumber(points[0])}`);
-  textLines.push(`左下角点: ${roundNumber(points[3])}`);
+  const topRightPoint = points[0].slice(0, 2);
+  const bottomLeftPoint = points[3].slice(0, 2);
+
+  textLines.push(`右上角点: ${roundNumber(topRightPoint)}`);
+  textLines.push(`左下角点: ${roundNumber(bottomLeftPoint)}`);
 
   return textLines;
 }

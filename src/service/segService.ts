@@ -5,24 +5,38 @@ import {
   Types,
   volumeLoader,
   cache,
+  CONSTANTS,
 } from "@cornerstonejs/core";
 import createImageIdsAndCacheMetaData from "../lib/createImageIdsAndCacheMetaData";
 
 import * as cornerstoneTools from "@cornerstonejs/tools";
-import { ToolGroupManager } from "@cornerstonejs/tools";
+import {
+  segmentation,
+  ToolGroupManager,
+  Enums as toolEnums,
+  TrackballRotateTool,
+} from "@cornerstonejs/tools";
 import RectangleToolForAISeg from "@/cornerstoneTools/RectangleToolForAISeg";
 
 // 导入我们的 mock 接口
 import { DataForSegAI, doSegAndGetResult } from "@/mock/doSegAndGetResult";
+import { config } from "@/config/config";
+import { TemporaryVolumeManager } from "./temporaryVolume";
+import { triggerSegmentationDataModified } from "@cornerstonejs/tools/segmentation/triggerSegmentationEvents";
 
 const { RectangleROITool, ZoomTool, StackScrollTool, PanTool } =
   cornerstoneTools;
 
 const { ViewportType } = Enums;
+const { SegmentationRepresentations } = toolEnums;
 
-const StudyInstanceUID = "1.2.840.31314.14143234.20160621082358.3303189";
-const SeriesInstanceUID = "1.3.46.670589.11.42556.5.0.5368.2016062111130713198";
-const wadoRsRoot = "http://localhost:5985";
+// local
+const wadoRsRoot = config.wadoRsRoot;
+
+// service
+// const StudyInstanceUID = "2.25.204011655578844946459122251061839053883";
+// const SeriesInstanceUID = "2.25.252553488120607950750024680258926791038";
+// const wadoRsRoot = "http://localhost:5173/dicomweb";
 
 const { MouseBindings } = cornerstoneTools.Enums;
 
@@ -36,7 +50,7 @@ export const getSEGService = () => {
   return SEGServiceSingleton;
 };
 
-const viewportIds = {
+export const viewportIds = {
   MPR: { AXIAL: "v5001", SAGITTAL: "v5002", CORONAL: "v5003" },
   SURFACE: {
     CORONAL: "v5004",
@@ -48,11 +62,16 @@ class SEGService {
   private SeriesInstanceUID: string;
   private MPRVolumeID: string = "MPRVolumeID";
   private segList: Array<string> = [];
-  segmentationId: string = "SEGMENTATION_VOLUME";
-  toolGroupId: string = "SEG_VIEW_TOOLGROUPID";
+  segmentationId: string = "SEGMENTATION_ID";
+  segmentationVolumeId: string = "SEGMENTATION_VOLUME";
+  viewToolGroupId: string = "VIEW_TOOLGROUPID";
+  segToolGroupId: string = "SEG_TOOLGROUPID";
+  ToolGroup3DId: string = "3D_TOOLGROUPID";
+  viewToolGroup: cornerstoneTools.Types.IToolGroup;
+  segToolGroup: cornerstoneTools.Types.IToolGroup;
+  ToolGroup3D: cornerstoneTools.Types.IToolGroup;
   renderingEngineId: string = "myRenderingEngine";
   renderingEngine: RenderingEngine;
-  toolGroup: cornerstoneTools.Types.IToolGroup;
   isResizing: boolean = false;
   resizeObserver: ResizeObserver = new ResizeObserver(() => {
     if (this.isResizing) {
@@ -70,7 +89,10 @@ class SEGService {
     this.SeriesInstanceUID = seriesInstanceUID;
 
     this.renderingEngine = new RenderingEngine(this.renderingEngineId);
-    this.toolGroup = ToolGroupManager.createToolGroup(this.toolGroupId);
+
+    this.viewToolGroup = ToolGroupManager.createToolGroup(this.viewToolGroupId);
+    this.segToolGroup = ToolGroupManager.createToolGroup(this.segToolGroupId);
+    this.ToolGroup3D = ToolGroupManager.createToolGroup(this.ToolGroup3DId);
 
     const StudyInstanceUID = this.StudyInstanceUID;
     const SeriesInstanceUID = this.SeriesInstanceUID;
@@ -89,7 +111,7 @@ class SEGService {
         .then(() => {
           // 我们在这里初始化我们的 seg volume
           volumeLoader.createAndCacheDerivedLabelmapVolume(this.MPRVolumeID, {
-            volumeId: this.segmentationId,
+            volumeId: this.segmentationVolumeId,
           });
         });
     });
@@ -100,6 +122,8 @@ class SEGService {
     this.initViewport();
     this.createToolGroupAndAddViewport();
     this.loadVolume();
+    this.initSegmentation();
+    this.addSegData();
   }
 
   addEventListener() {}
@@ -143,7 +167,7 @@ class SEGService {
         type: ViewportType.VOLUME_3D,
         element: surfaceViewport,
         defaultOptions: {
-          orientation: Enums.OrientationAxis.CORONAL,
+          background: CONSTANTS.BACKGROUND_COLORS.slicer3D,
         },
       },
     ];
@@ -152,17 +176,8 @@ class SEGService {
   }
 
   private async loadVolume() {
-    const StudyInstanceUID = this.StudyInstanceUID;
-    const SeriesInstanceUID = this.SeriesInstanceUID;
     const MPRVolumeID = this.MPRVolumeID;
     const renderingEngine = this.renderingEngine;
-
-    // // 加载 Volume
-    // const imageIds = await createImageIdsAndCacheMetaData({
-    //   StudyInstanceUID,
-    //   SeriesInstanceUID,
-    //   wadoRsRoot,
-    // });
 
     const volume = cache.getVolume(this.MPRVolumeID);
 
@@ -175,7 +190,12 @@ class SEGService {
           volumeId: MPRVolumeID,
         },
       ],
-      [viewportIds.MPR.AXIAL, viewportIds.MPR.SAGITTAL, viewportIds.MPR.CORONAL]
+      [
+        viewportIds.MPR.AXIAL,
+        viewportIds.MPR.SAGITTAL,
+        viewportIds.MPR.CORONAL,
+        viewportIds.SURFACE.CORONAL,
+      ]
     );
 
     renderingEngine.render();
@@ -187,43 +207,72 @@ class SEGService {
     cornerstoneTools.addTool(RectangleROITool);
     cornerstoneTools.addTool(StackScrollTool);
     cornerstoneTools.addTool(RectangleToolForAISeg);
+    cornerstoneTools.addTool(TrackballRotateTool);
 
-    const toolGroup = this.toolGroup;
+    const toolGroupList = [this.viewToolGroup, this.segToolGroup];
 
-    toolGroup.addTool(PanTool.toolName);
-    toolGroup.addTool(ZoomTool.toolName);
-    toolGroup.addTool(StackScrollTool.toolName);
-    toolGroup.addTool(RectangleToolForAISeg.toolName);
-    toolGroup.addTool(RectangleROITool.toolName);
+    toolGroupList.forEach((toolGroup) => {
+      toolGroup.addTool(PanTool.toolName);
+      toolGroup.addTool(ZoomTool.toolName);
+      toolGroup.addTool(StackScrollTool.toolName);
 
-    toolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Secondary,
-        },
-      ],
+      toolGroup.setToolActive(ZoomTool.toolName, {
+        bindings: [
+          {
+            mouseButton: MouseBindings.Secondary,
+          },
+        ],
+      });
+
+      toolGroup.setToolActive(PanTool.toolName, {
+        bindings: [
+          {
+            mouseButton: MouseBindings.Auxiliary,
+          },
+        ],
+      });
+
+      if (toolGroup.id === this.segToolGroupId) {
+        toolGroup.addTool(RectangleToolForAISeg.toolName);
+
+        toolGroup.setToolActive(RectangleToolForAISeg.toolName, {
+          bindings: [
+            {
+              mouseButton: MouseBindings.Primary,
+            },
+          ],
+        });
+
+        toolGroup.setToolActive(StackScrollTool.toolName, {
+          bindings: [
+            {
+              mouseButton: MouseBindings.Wheel,
+            },
+          ],
+        });
+      } else {
+        toolGroup.setToolActive(StackScrollTool.toolName, {
+          bindings: [
+            {
+              mouseButton: MouseBindings.Primary,
+            },
+            {
+              mouseButton: MouseBindings.Wheel,
+            },
+          ],
+        });
+      }
     });
 
-    toolGroup.setToolActive(PanTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Auxiliary,
-        },
-      ],
-    });
+    [viewportIds.MPR.CORONAL, viewportIds.MPR.SAGITTAL].forEach(
+      (viewportId) => {
+        this.viewToolGroup.addViewport(viewportId);
+      }
+    );
 
-    toolGroup.setToolActive(StackScrollTool.toolName, {
-      bindings: [
-        // {
-        //   mouseButton: MouseBindings.Primary,
-        // },
-        {
-          mouseButton: MouseBindings.Wheel,
-        },
-      ],
-    });
+    this.ToolGroup3D.addTool(TrackballRotateTool.toolName);
 
-    toolGroup.setToolActive(RectangleToolForAISeg.toolName, {
+    this.ToolGroup3D.setToolActive(TrackballRotateTool.toolName, {
       bindings: [
         {
           mouseButton: MouseBindings.Primary,
@@ -231,12 +280,9 @@ class SEGService {
       ],
     });
 
-    const viewportIdList = Object.values(viewportIds.MPR);
+    this.segToolGroup.addViewport(viewportIds.MPR.AXIAL);
 
-    viewportIdList.forEach((viewportId) => {
-      toolGroup.addViewport(viewportId);
-      console.log(viewportId);
-    });
+    this.ToolGroup3D.addViewport(viewportIds.SURFACE.CORONAL);
   }
 
   registerResizeObserver() {
@@ -276,9 +322,74 @@ class SEGService {
     });
   }
 
-  addSegData(dataForSegAI: DataForSegAI) {
-    const segmentationVolume = cache.getVolume(
-      this.segmentationId
-    ) as ImageVolume;
+  // dataForSegAI: DataForSegAI 暂时不需要
+  async addSegData() {
+    const segmentationVolume = cache.getVolume(this.segmentationVolumeId);
+    const segVoxelManager = segmentationVolume.voxelManager;
+    const segmentationId = this.segmentationId;
+
+    let temporaryVolumeManger = new TemporaryVolumeManager({
+      StudyInstanceUID: "2.25.192000203449462464300556352146497553955",
+      SeriesInstanceUID: "2.25.211740913197583156653763061616189163646",
+    });
+
+    const temporaryVolume = await temporaryVolumeManger.getVolume();
+
+    temporaryVolume.load(() => {
+      setTimeout(() => {
+        const segData =
+          temporaryVolume.voxelManager.getCompleteScalarDataArray();
+
+        segData.forEach((value, index) => {
+          if (value === 1) {
+            segVoxelManager.setAtIndex(index, 3);
+          }
+        });
+
+        // 这段代码之后需要修改
+        segmentation.addSegmentationRepresentations(
+          viewportIds.SURFACE.CORONAL,
+          [
+            {
+              segmentationId,
+              type: SegmentationRepresentations.Surface,
+              options: {
+                polySeg: {
+                  enabled: true,
+                },
+              },
+            },
+          ]
+        );
+
+        triggerSegmentationDataModified(this.segmentationId);
+      }, 1000);
+    });
+  }
+
+  initSegmentation() {
+    const segmentationId = this.segmentationId;
+
+    segmentation.addSegmentations([
+      {
+        segmentationId,
+        representation: {
+          type: SegmentationRepresentations.Labelmap,
+          data: {
+            volumeId: this.segmentationVolumeId,
+          },
+        },
+      },
+    ]);
+
+    const segmentationRepresentation = {
+      segmentationId,
+    };
+
+    segmentation.addLabelmapRepresentationToViewportMap({
+      [viewportIds.MPR.AXIAL]: [segmentationRepresentation],
+      [viewportIds.MPR.SAGITTAL]: [segmentationRepresentation],
+      [viewportIds.MPR.CORONAL]: [segmentationRepresentation],
+    });
   }
 }
