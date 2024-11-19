@@ -8,7 +8,6 @@ import type { Types } from "@cornerstonejs/core";
 
 import * as rectangle from "./utilities/math/rectangle";
 import { getTextBoxCoordsCanvas } from "./utilities/drawing";
-
 import triggerAnnotationRenderForViewportIds from "./utilities/triggerAnnotationRenderForViewportIds";
 
 import {
@@ -18,11 +17,11 @@ import {
   cursors,
   Enums,
   drawing,
+  utilities,
 } from "@cornerstonejs/tools";
 
-import getViewportIdsWithToolToRender from "@cornerstonejs/tools/utilities/viewportFilters/getViewportIdsWithToolToRender";
-import { AnnotationCompletedEventDetail } from "@cornerstonejs/tools/types/EventTypes";
-import { Annotation } from "@cornerstonejs/tools/types";
+const getViewportIdsWithToolToRender =
+  utilities.viewportFilters.getViewportIdsWithToolToRender;
 
 const {
   drawHandles: drawHandlesSvg,
@@ -41,8 +40,6 @@ const {
   locking: { isAnnotationLocked },
   visibility: { isAnnotationVisible },
 } = annotation;
-
-// import { triggerAnnotationCompleted } from "../../stateManagement/annotation/helpers/state";
 
 const { roundNumber } = csUtilities;
 

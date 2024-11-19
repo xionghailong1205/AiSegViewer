@@ -1,5 +1,5 @@
 import { getEnabledElementByViewportId } from "@cornerstonejs/core";
-import { triggerAnnotationRender } from "@cornerstonejs/tools/utilities";
+import { utilities } from "@cornerstonejs/tools";
 
 export function triggerAnnotationRenderForViewportIds(
   viewportIdsToRender: string[]
@@ -23,7 +23,7 @@ export function triggerAnnotationRenderForViewportIds(
     }
 
     const element = viewport.element;
-    triggerAnnotationRender(element);
+    utilities.triggerAnnotationRender(element);
   });
 }
 

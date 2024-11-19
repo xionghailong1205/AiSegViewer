@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { annotation } from "@cornerstonejs/tools";
 import { getSEGService, viewportIds } from "@/service/segService";
-import { getAnnotationManager } from "@cornerstonejs/tools/annotation/annotationState";
 
+const { getAnnotationManager } = annotation.state;
 const { removeAnnotation } = annotation.state;
 
 interface contextPosition {

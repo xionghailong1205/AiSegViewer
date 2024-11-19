@@ -50,9 +50,20 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@cornerstonejs/tools": (() => {
+        const result = path.resolve(
+          __dirname,
+          "./src/cornerstoneTools/src/index.js"
+        );
+
+        console.log(result);
+
+        return result;
+      })(),
     },
   },
   server: {
+    port: 8848,
     proxy: {
       "/dicomweb": {
         target: "http://38.12.43.20:8042/",

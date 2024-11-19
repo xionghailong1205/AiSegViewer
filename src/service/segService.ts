@@ -22,7 +22,8 @@ import RectangleToolForAISeg from "@/cornerstoneTools/RectangleToolForAISeg";
 import { DataForSegAI, doSegAndGetResult } from "@/mock/doSegAndGetResult";
 import { config } from "@/config/config";
 import { TemporaryVolumeManager } from "./temporaryVolume";
-import { triggerSegmentationDataModified } from "@cornerstonejs/tools/segmentation/triggerSegmentationEvents";
+const { triggerSegmentationDataModified } =
+  segmentation.triggerSegmentationEvents;
 
 const { RectangleROITool, ZoomTool, StackScrollTool, PanTool } =
   cornerstoneTools;
@@ -190,12 +191,7 @@ class SEGService {
           volumeId: MPRVolumeID,
         },
       ],
-      [
-        viewportIds.MPR.AXIAL,
-        viewportIds.MPR.SAGITTAL,
-        viewportIds.MPR.CORONAL,
-        viewportIds.SURFACE.CORONAL,
-      ]
+      [viewportIds.MPR.AXIAL, viewportIds.MPR.SAGITTAL, viewportIds.MPR.CORONAL]
     );
 
     renderingEngine.render();
