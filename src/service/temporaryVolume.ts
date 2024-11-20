@@ -1,6 +1,6 @@
 import { config } from "@/config/config";
 import createImageIdsAndCacheMetaData from "@/lib/createImageIdsAndCacheMetaData";
-import { StreamingImageVolume, volumeLoader } from "@cornerstonejs/core";
+import { StreamingImageVolume, volumeLoader, cache } from "@cornerstonejs/core";
 
 // 这个只能有一个实例子, 不然会出错
 export class TemporaryVolumeManager {
@@ -8,7 +8,6 @@ export class TemporaryVolumeManager {
   private SeriesInstanceUID: string;
   private wadoRsRoot = config.wadoRsRoot;
   private temportVolumeId = "TEMPORY_VOLUME";
-  private volume: StreamingImageVolume;
 
   constructor({
     StudyInstanceUID,
@@ -22,25 +21,29 @@ export class TemporaryVolumeManager {
   }
 
   async getVolume() {
-    if (!this.volume) {
+    const tmpVolume = cache.getVolume(this.temportVolumeId);
+
+    if (!tmpVolume) {
       const imageIds = await createImageIdsAndCacheMetaData({
         StudyInstanceUID: this.StudyInstanceUID,
         SeriesInstanceUID: this.SeriesInstanceUID,
         wadoRsRoot: this.wadoRsRoot,
       });
 
-      this.volume = (await volumeLoader.createAndCacheVolume(
+      const tmpVolume = (await volumeLoader.createAndCacheVolume(
         this.temportVolumeId,
         {
           imageIds,
         }
       )) as StreamingImageVolume;
 
-      return this.volume;
+      return tmpVolume;
     } else {
-      return this.volume;
+      return tmpVolume;
     }
   }
 
-  destoryVolume() {}
+  destoryVolume() {
+    cache.removeVolumeLoadObject(this.temportVolumeId);
+  }
 }

@@ -24,6 +24,7 @@
     "dcmjs": "0.33.0",
     "dicom-parser": "1.8.21",
     "dicomweb-client": "0.10.4",
+    "immer": "^10.1.1",
     "lucide-react": "^0.456.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
