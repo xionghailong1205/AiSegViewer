@@ -17,7 +17,7 @@ export default class ICRPolySeg {
     this._instance = await launcher({
       locateFile: (f) => {
         if (f.endsWith(".wasm")) {
-          const wasmFilePath = `http://localhost:8848/ICRPolySeg.wasm`;
+          const wasmFilePath = `/ICRPolySeg.wasm`;
           console.log(wasmFilePath);
           return wasmFilePath;
         }

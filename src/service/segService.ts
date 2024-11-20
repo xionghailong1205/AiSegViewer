@@ -40,7 +40,7 @@ const wadoRsRoot = config.wadoRsRoot;
 // service
 // const StudyInstanceUID = "2.25.204011655578844946459122251061839053883";
 // const SeriesInstanceUID = "2.25.252553488120607950750024680258926791038";
-// const wadoRsRoot = "http://localhost:5173/dicomweb";
+// const wadoRsRoot = "http://localhost:8848/dicomweb";
 
 const { MouseBindings } = cornerstoneTools.Enums;
 
@@ -119,8 +119,6 @@ class SEGService {
     this.initViewport();
     this.createToolGroupAndAddViewport();
     this.loadVolume();
-    // this.initSegmentation();
-    // this.addSegData();
   }
 
   addEventListener() {}
@@ -326,83 +324,85 @@ class SEGService {
   async addSegData(segData: DataForSegAI, idOfSelectedAnnotation: string) {
     const segmentationId = crypto.randomUUID();
 
-    // 我们在这里初始化我们的 seg volume
-    const segmentationVolume = volumeLoader.createAndCacheDerivedLabelmapVolume(
-      this.MPRVolumeID,
-      {
-        volumeId: segmentationId,
-      }
-    );
+    console.log(segData);
 
-    const segVoxelManager = segmentationVolume.voxelManager;
+    // // 我们在这里初始化我们的 seg volume
+    // const segmentationVolume = volumeLoader.createAndCacheDerivedLabelmapVolume(
+    //   this.MPRVolumeID,
+    //   {
+    //     volumeId: segmentationId,
+    //   }
+    // );
 
-    let temporaryVolumeManger = new TemporaryVolumeManager({
-      StudyInstanceUID: "2.25.192000203449462464300556352146497553955",
-      SeriesInstanceUID: "2.25.211740913197583156653763061616189163646",
-    });
+    // const segVoxelManager = segmentationVolume.voxelManager;
 
-    const temporaryVolume = await temporaryVolumeManger.getVolume();
+    // let temporaryVolumeManger = new TemporaryVolumeManager({
+    //   StudyInstanceUID: "2.25.192000203449462464300556352146497553955",
+    //   SeriesInstanceUID: "2.25.211740913197583156653763061616189163646",
+    // });
 
-    segmentation.addSegmentations([
-      {
-        segmentationId,
-        representation: {
-          type: SegmentationRepresentations.Labelmap,
-          data: {
-            volumeId: segmentationId,
-          },
-        },
-      },
-    ]);
+    // const temporaryVolume = await temporaryVolumeManger.getVolume();
 
-    const segmentationRepresentation = {
-      segmentationId,
-    };
+    // segmentation.addSegmentations([
+    //   {
+    //     segmentationId,
+    //     representation: {
+    //       type: SegmentationRepresentations.Labelmap,
+    //       data: {
+    //         volumeId: segmentationId,
+    //       },
+    //     },
+    //   },
+    // ]);
 
-    segmentation.addLabelmapRepresentationToViewportMap({
-      [viewportIds.MPR.AXIAL]: [segmentationRepresentation],
-      [viewportIds.MPR.SAGITTAL]: [segmentationRepresentation],
-      [viewportIds.MPR.CORONAL]: [segmentationRepresentation],
-    });
+    // const segmentationRepresentation = {
+    //   segmentationId,
+    // };
 
-    temporaryVolume.load(() => {
-      setTimeout(() => {
-        const segData =
-          temporaryVolume.voxelManager.getCompleteScalarDataArray();
+    // segmentation.addLabelmapRepresentationToViewportMap({
+    //   [viewportIds.MPR.AXIAL]: [segmentationRepresentation],
+    //   [viewportIds.MPR.SAGITTAL]: [segmentationRepresentation],
+    //   [viewportIds.MPR.CORONAL]: [segmentationRepresentation],
+    // });
 
-        const randomScalar = this._generateRandomScalar();
+    // temporaryVolume.load(() => {
+    //   setTimeout(() => {
+    //     const segData =
+    //       temporaryVolume.voxelManager.getCompleteScalarDataArray();
 
-        segData.forEach((value, index) => {
-          if (value === 1) {
-            segVoxelManager.setAtIndex(index, randomScalar);
-          }
-        });
+    //     const randomScalar = this._generateRandomScalar();
 
-        temporaryVolumeManger.destoryVolume();
+    //     segData.forEach((value, index) => {
+    //       if (value === 1) {
+    //         segVoxelManager.setAtIndex(index, randomScalar);
+    //       }
+    //     });
 
-        // 我们在这个位置去调用 UI 中的
-        useSegListService.getState().addNewSeg(segmentationId);
-        alert("分割成功");
-        // 删除所有的 分割矩形
-        annotation.state.removeAnnotation(idOfSelectedAnnotation);
-        segmentation.addSegmentationRepresentations(
-          viewportIds.SURFACE.CORONAL,
-          [
-            {
-              segmentationId: segmentationId,
-              type: SegmentationRepresentations.Surface,
-              options: {
-                polySeg: {
-                  enabled: true,
-                },
-              },
-            },
-          ]
-        );
+    //     temporaryVolumeManger.destoryVolume();
 
-        triggerSegmentationDataModified(segmentationId);
-      }, 1000);
-    });
+    //     // 我们在这个位置去调用 UI 中的
+    //     useSegListService.getState().addNewSeg(segmentationId);
+    //     alert("分割成功");
+    //     // 删除所有的 分割矩形
+    //     annotation.state.removeAnnotation(idOfSelectedAnnotation);
+    //     segmentation.addSegmentationRepresentations(
+    //       viewportIds.SURFACE.CORONAL,
+    //       [
+    //         {
+    //           segmentationId: segmentationId,
+    //           type: SegmentationRepresentations.Surface,
+    //           options: {
+    //             polySeg: {
+    //               enabled: true,
+    //             },
+    //           },
+    //         },
+    //       ]
+    //     );
+
+    //     triggerSegmentationDataModified(segmentationId);
+    //   }, 1000);
+    // });
   }
 
   generateSurface() {
