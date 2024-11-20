@@ -65,10 +65,16 @@ export default defineConfig({
   server: {
     port: 8848,
     proxy: {
-      "/dicomweb": {
+      "/onlineDicomweb": {
         target: "http://38.12.43.20:8042/",
         rewrite: (path) => {
-          return path.replace(/^\/dicomweb/, "dicom-web");
+          return path.replace(/^\/onlineDicomweb/, "dicom-web");
+        },
+      },
+      "/localDicomWeb": {
+        target: "http://localhost:5985",
+        rewrite: (path) => {
+          return path.replace(/^\/localDicomWeb/, "");
         },
       },
       "/dicom-web": {
