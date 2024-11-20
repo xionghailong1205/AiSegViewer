@@ -30,9 +30,10 @@ const ViewportLayouter = () => {
             id='viewportLayouter'
         >
             {
-                containerIdList.map((containerId) => {
+                containerIdList.map((containerId,index) => {
                     return (
                         <DicomViewport
+                        key={index}
                             viewprotId={containerId}
                         />
                     )
