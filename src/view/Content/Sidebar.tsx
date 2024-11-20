@@ -5,6 +5,9 @@ import { ToolButton } from '@/ButtonFactory/ButtonClass'
 import clsx from 'clsx'
 import Segmentation from '@/Icons/AnnotationTool/segmentation'
 import { Button as TextButton } from '@/view/ui/button'
+import { SegInfo, useSegListService } from '@/store/useSegListService'
+import { getSEGService } from '@/service/segService'
+
 
 const Sidebar = () => {
     return (
@@ -53,6 +56,8 @@ const ToolGroup = () => {
 }
 
 const SegList = () => {
+    const segList = useSegListService(state => state.segList)
+
     return (
         <div
             style={{
@@ -77,7 +82,15 @@ const SegList = () => {
                     borderRadius: "5px"
                 }}
             >
-                <SegInfoBox />
+                {
+                    segList.map(segInfo => {
+                        return (
+                            <SegInfoBox
+                                {...segInfo}
+                            />
+                        )
+                    })
+                }
             </div>
         </div>
     )
@@ -130,7 +143,10 @@ const ButtonList = ({
     )
 }
 
-const SegInfoBox = ({ }: {}) => {
+const SegInfoBox = ({
+    name,
+    segId
+}: SegInfo) => {
     return (
         <div
             style={{
@@ -154,11 +170,16 @@ const SegInfoBox = ({ }: {}) => {
                     flex: 1
                 }}
             >
-                分割1
+                {segId}
             </div>
             <div>
-                <TextButton>
-                    生成表面
+                <TextButton
+                    onClick={() => {
+                        useSegListService.getState().removeSeg(segId)
+                        getSEGService().removeSeg(segId)
+                    }}
+                >
+                    {`删除`}
                 </TextButton>
             </div>
         </div>

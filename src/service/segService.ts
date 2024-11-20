@@ -15,6 +15,7 @@ import {
   ToolGroupManager,
   Enums as toolEnums,
   TrackballRotateTool,
+  annotation,
 } from "@cornerstonejs/tools";
 import RectangleToolForAISeg from "@/cornerstoneTools/RectangleToolForAISeg";
 
@@ -22,6 +23,8 @@ import RectangleToolForAISeg from "@/cornerstoneTools/RectangleToolForAISeg";
 import { DataForSegAI, doSegAndGetResult } from "@/mock/doSegAndGetResult";
 import { config } from "@/config/config";
 import { TemporaryVolumeManager } from "./temporaryVolume";
+import { useSegListService } from "@/store/useSegListService";
+
 const { triggerSegmentationDataModified } =
   segmentation.triggerSegmentationEvents;
 
@@ -105,16 +108,9 @@ class SEGService {
       SeriesInstanceUID,
       wadoRsRoot,
     }).then((imageIds) => {
-      volumeLoader
-        .createAndCacheVolume(MPRVolumeID, {
-          imageIds,
-        })
-        .then(() => {
-          // 我们在这里初始化我们的 seg volume
-          volumeLoader.createAndCacheDerivedLabelmapVolume(this.MPRVolumeID, {
-            volumeId: this.segmentationVolumeId,
-          });
-        });
+      volumeLoader.createAndCacheVolume(MPRVolumeID, {
+        imageIds,
+      });
     });
   }
 
@@ -123,8 +119,8 @@ class SEGService {
     this.initViewport();
     this.createToolGroupAndAddViewport();
     this.loadVolume();
-    this.initSegmentation();
-    this.addSegData();
+    // this.initSegmentation();
+    // this.addSegData();
   }
 
   addEventListener() {}
@@ -318,11 +314,27 @@ class SEGService {
     });
   }
 
+  private _generateRandomScalar() {
+    return Math.floor(Math.random() * 255);
+  }
+
+  getSegmentationId(index) {
+    return `SEG_${index}`;
+  }
+
   // dataForSegAI: DataForSegAI 暂时不需要
-  async addSegData() {
-    const segmentationVolume = cache.getVolume(this.segmentationVolumeId);
+  async addSegData(segData: DataForSegAI, idOfSelectedAnnotation: string) {
+    const segmentationId = crypto.randomUUID();
+
+    // 我们在这里初始化我们的 seg volume
+    const segmentationVolume = volumeLoader.createAndCacheDerivedLabelmapVolume(
+      this.MPRVolumeID,
+      {
+        volumeId: segmentationId,
+      }
+    );
+
     const segVoxelManager = segmentationVolume.voxelManager;
-    const segmentationId = this.segmentationId;
 
     let temporaryVolumeManger = new TemporaryVolumeManager({
       StudyInstanceUID: "2.25.192000203449462464300556352146497553955",
@@ -331,48 +343,13 @@ class SEGService {
 
     const temporaryVolume = await temporaryVolumeManger.getVolume();
 
-    temporaryVolume.load(() => {
-      setTimeout(() => {
-        const segData =
-          temporaryVolume.voxelManager.getCompleteScalarDataArray();
-
-        segData.forEach((value, index) => {
-          if (value === 1) {
-            segVoxelManager.setAtIndex(index, 3);
-          }
-        });
-
-        // 这段代码之后需要修改
-        segmentation.addSegmentationRepresentations(
-          viewportIds.SURFACE.CORONAL,
-          [
-            {
-              segmentationId,
-              type: SegmentationRepresentations.Surface,
-              options: {
-                polySeg: {
-                  enabled: true,
-                },
-              },
-            },
-          ]
-        );
-
-        triggerSegmentationDataModified(this.segmentationId);
-      }, 1000);
-    });
-  }
-
-  initSegmentation() {
-    const segmentationId = this.segmentationId;
-
     segmentation.addSegmentations([
       {
         segmentationId,
         representation: {
           type: SegmentationRepresentations.Labelmap,
           data: {
-            volumeId: this.segmentationVolumeId,
+            volumeId: segmentationId,
           },
         },
       },
@@ -387,5 +364,73 @@ class SEGService {
       [viewportIds.MPR.SAGITTAL]: [segmentationRepresentation],
       [viewportIds.MPR.CORONAL]: [segmentationRepresentation],
     });
+
+    temporaryVolume.load(() => {
+      setTimeout(() => {
+        const segData =
+          temporaryVolume.voxelManager.getCompleteScalarDataArray();
+
+        const randomScalar = this._generateRandomScalar();
+
+        segData.forEach((value, index) => {
+          if (value === 1) {
+            segVoxelManager.setAtIndex(index, randomScalar);
+          }
+        });
+
+        temporaryVolumeManger.destoryVolume();
+
+        // 我们在这个位置去调用 UI 中的
+        useSegListService.getState().addNewSeg(segmentationId);
+        alert("分割成功");
+        // 删除所有的 分割矩形
+        annotation.state.removeAnnotation(idOfSelectedAnnotation);
+        segmentation.addSegmentationRepresentations(
+          viewportIds.SURFACE.CORONAL,
+          [
+            {
+              segmentationId: segmentationId,
+              type: SegmentationRepresentations.Surface,
+              options: {
+                polySeg: {
+                  enabled: true,
+                },
+              },
+            },
+          ]
+        );
+
+        triggerSegmentationDataModified(segmentationId);
+      }, 1000);
+    });
+  }
+
+  generateSurface() {
+    segmentation.addSegmentationRepresentations(viewportIds.SURFACE.CORONAL, [
+      {
+        segmentationId: this.segmentationId,
+        type: SegmentationRepresentations.Surface,
+        options: {
+          polySeg: {
+            enabled: true,
+          },
+        },
+      },
+    ]);
+  }
+
+  removeSeg(segmentationId) {
+    segmentation.removeSegmentation(segmentationId);
+
+    segmentation.removeSurfaceRepresentation(
+      viewportIds.SURFACE.CORONAL,
+      segmentationId
+    );
+
+    cache.removeVolumeLoadObject(segmentationId);
+
+    this.renderingEngine
+      .getViewport(viewportIds.SURFACE.CORONAL)
+      .removeAllActors();
   }
 }

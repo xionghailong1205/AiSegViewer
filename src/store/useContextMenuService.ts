@@ -83,14 +83,17 @@ export const useContextMenuService = create<ContextMenuServiceProp>(
       const width = bottomLeftPoint[0] - topRightPoint[0];
       const height = bottomLeftPoint[1] - topRightPoint[1];
 
-      segService.addSegData({
-        referenceStudyUID: StudyInstanceUID,
-        sliceIndex,
-        left: topRightPoint[0],
-        top: topRightPoint[1],
-        width,
-        height,
-      });
+      segService.addSegData(
+        {
+          referenceStudyUID: StudyInstanceUID,
+          sliceIndex,
+          left: topRightPoint[0],
+          top: topRightPoint[1],
+          width,
+          height,
+        },
+        idOfSelectedAnnotation
+      );
     },
   })
 );
