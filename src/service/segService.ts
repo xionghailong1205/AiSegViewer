@@ -87,6 +87,7 @@ class SEGService {
     // this.resize();
     // console.log("代码执行");
   });
+  originCoordinate: Types.Point2 | undefined = undefined;
 
   constructor(studyInstanceUID: string, seriesInstanceUID: string) {
     this.StudyInstanceUID = studyInstanceUID;
@@ -429,8 +430,23 @@ class SEGService {
 
     cache.removeVolumeLoadObject(segmentationId);
 
+    this.renderingEngine.getViewport(viewportIds.SURFACE.CORONAL).getImageData;
+
     this.renderingEngine
       .getViewport(viewportIds.SURFACE.CORONAL)
       .removeAllActors();
+  }
+
+  getOriginCoordinate(): Types.Point2 {
+    if (!this.originCoordinate) {
+      const imageData = this.renderingEngine
+        .getViewport(viewportIds.MPR.AXIAL)
+        .getImageData().imageData;
+
+      this.originCoordinate = imageData.indexToWorld([0, 512, 0]);
+      return this.originCoordinate;
+    } else {
+      return this.originCoordinate;
+    }
   }
 }

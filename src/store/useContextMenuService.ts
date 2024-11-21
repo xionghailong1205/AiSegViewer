@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { annotation } from "@cornerstonejs/tools";
+import { annotation, utilities } from "@cornerstonejs/tools";
 import { getSEGService, viewportIds } from "@/service/segService";
 
 const { getAnnotationManager } = annotation.state;
@@ -26,6 +26,7 @@ interface action {
   closeContextMenu: () => void;
   removeSelectedAnnotation: () => void;
   doAiSeg: () => void;
+  apiTest: () => void;
 }
 
 interface ContextMenuServiceProp extends state, action {}
@@ -80,20 +81,31 @@ export const useContextMenuService = create<ContextMenuServiceProp>(
         2
       );
 
-      const width = bottomLeftPoint[0] - topRightPoint[0];
-      const height = bottomLeftPoint[1] - topRightPoint[1];
+      const originCoordinate = segService.getOriginCoordinate();
+
+      const left = Math.abs(topRightPoint[0] - originCoordinate[0]);
+      const top = Math.abs(topRightPoint[1] - originCoordinate[1]);
+
+      const width = Math.abs(bottomLeftPoint[0] - topRightPoint[0]);
+      const height = Math.abs(bottomLeftPoint[1] - topRightPoint[1]);
 
       segService.addSegData(
         {
           referenceStudyUID: StudyInstanceUID,
           sliceIndex,
-          left: topRightPoint[0],
-          top: topRightPoint[1],
+          top,
+          left,
           width,
           height,
         },
         idOfSelectedAnnotation
       );
+    },
+    // 我们在这里做一个简单 API 测试起
+    apiTest() {
+      const segService = getSEGService();
+      const result = segService.getOriginCoordinate();
+      alert(result);
     },
   })
 );

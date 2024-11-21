@@ -82,14 +82,14 @@ export default defineConfig({
         // rewrite: (path) => {
         //   return path.replace(/^\/dicomweb/, "dicom-web");
         // },
-        secure:false
+        secure: false,
       },
       "/medical": {
         target: "https://hz-jcy-1.matpool.com:26335",
         // rewrite: (path) => {
         //   return path.replace(/^\/dicomweb/, "dicom-web");
         // },
-        secure:false
+        secure: false,
       },
     },
   },
