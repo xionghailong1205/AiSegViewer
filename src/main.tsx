@@ -5,8 +5,10 @@ import Nifti from './Nifti.tsx'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+  <>
+  {/* <React.StrictMode> */}
     <App />
     {/* <Nifti /> */}
-  </React.StrictMode>,
+  {/* </React.StrictMode>, */}
+  </>
 )
