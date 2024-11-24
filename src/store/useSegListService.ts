@@ -4,7 +4,7 @@ import { Network } from "@/service/network";
 import { getMockSegList } from "@/api/mock";
 import { getSEGService, SegInfoForAddSeg } from "@/service/segService";
 
-interface SegInfoFromServer {
+export interface SegInfoFromServer {
   id: string;
   parentPatient: string;
   parentSeries: string;
@@ -12,7 +12,7 @@ interface SegInfoFromServer {
 }
 
 export interface SegInfo {
-  status: "compelete" | "processing";
+  status: "compelete" | "processing" | "loading";
   segId: string;
 }
 
@@ -22,10 +22,12 @@ interface state {
 }
 
 interface action {
-  addNewSeg: (segId: string) => void;
+  addNewSegAfterLoading: (loadingId: string, segId: string) => void;
   removeSeg: (segId: string) => void;
   updateSegList: () => void;
-  addNewTask: () => void;
+  addNewTask: () => string;
+  addNewLoading: () => string;
+  // clearTaskAfterRequest: (taskId: string) => void
 }
 
 interface SegListServiceProp extends state, action {}
@@ -34,9 +36,11 @@ export const useSegListService = create<SegListServiceProp>((set, get) => ({
   segList: [],
   taskIndex: 0,
   addNewTask() {
+    const segId = `Task-${get().taskIndex}`;
+
     const newSegInfo: SegInfo = {
       status: "processing",
-      segId: `Task-${get().taskIndex}`,
+      segId,
     };
 
     set(
@@ -45,17 +49,39 @@ export const useSegListService = create<SegListServiceProp>((set, get) => ({
         state.taskIndex++;
       })
     );
+
+    return segId;
   },
-  addNewSeg(segId) {
+  addNewLoading() {
+    const segId = `Load-${get().taskIndex}`;
+
     const newSegInfo: SegInfo = {
-      // 之后可以自定义
-      status: "compelete",
+      status: "loading",
       segId,
     };
 
     set(
       produce((state: state) => {
         state.segList.push(newSegInfo);
+        state.taskIndex++;
+      })
+    );
+
+    return segId;
+  },
+  addNewSegAfterLoading(loadingId, segId) {
+    set(
+      produce((state: state) => {
+        state.segList = state.segList.map((segInfo) => {
+          if (segInfo.segId === loadingId) {
+            return {
+              status: "compelete",
+              segId,
+            };
+          } else {
+            return segInfo;
+          }
+        });
       })
     );
   },
@@ -68,6 +94,7 @@ export const useSegListService = create<SegListServiceProp>((set, get) => ({
       })
     );
   },
+  // TODO: 这里之后做一个简单的修改
   async updateSegList() {
     const result = await Network.getSegListOfStudy();
     const segService = getSEGService();
@@ -84,13 +111,17 @@ export const useSegListService = create<SegListServiceProp>((set, get) => ({
       }
     );
 
-    console.log(segList);
-
-    // const segList = getMockSegList();
-
     async function* addSeg() {
-      for (const segInfo of segList) {
-        const result = await segService.addSeg(segInfo);
+      const dataListForAddSegIntoViewport = segList.map((segInfo) => {
+        const dataForAddSegIntoViewport = segService.requestSegImage(segInfo);
+
+        return dataForAddSegIntoViewport;
+      });
+
+      for (const dataForAddSegIntoViewport of dataListForAddSegIntoViewport) {
+        const { segInfo, loadingId } = dataForAddSegIntoViewport;
+
+        await segService.addSegIntoViewport(segInfo, loadingId);
         yield result;
       }
     }

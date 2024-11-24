@@ -6,6 +6,7 @@ import Content from "@/view/Content/Content";
 import List from "@/view/List";
 import { ContextMenu } from "@/view/component/ContextMenu";
 import { useSegListService } from "./store/useSegListService";
+import { Toaster } from "./ui/toaster";
 
 function App() {
   const running = useRef(false);
@@ -48,6 +49,7 @@ function App() {
             >
               <Content />
               <ContextMenu />
+              <Toaster />
             </div>
           }
         />

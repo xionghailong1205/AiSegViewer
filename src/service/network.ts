@@ -8,9 +8,8 @@ export namespace Network {
       "Content-Type": "application/json",
     };
 
-    // 这里我们硬编码了, 之后我们要做修改
     let bodyContent = JSON.stringify({
-      groupId: "a69c11a8-44a41043-bce22781-172adef2-e51df883",
+      groupId,
     });
 
     let response = await fetch(
@@ -44,6 +43,32 @@ export namespace Network {
     );
 
     let result = await response.json();
+    return result;
+  };
+
+  export const deleteSegResultOnServer = async (segId) => {
+    let headersList = {
+      Accept: "*/*",
+      "Content-Type": "application/json",
+    };
+
+    let bodyContent = JSON.stringify({
+      id: segId,
+    });
+
+    let response = await fetch(
+      `${config.aiSegServiceBaseURL}/medical/image/split/delete`,
+      {
+        method: "POST",
+        body: bodyContent,
+        headers: headersList,
+      }
+    );
+
+    const result = await response.json();
+
     console.log(result);
+
+    return result;
   };
 }

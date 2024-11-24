@@ -4,7 +4,7 @@ import {
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from '@/view/ui/tooltip'
+} from '@/ui/tooltip'
 
 const IconButton = (
     {

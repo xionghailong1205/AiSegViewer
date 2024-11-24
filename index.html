@@ -5,20 +5,21 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- 获取查询参数 -->
 
   <script>
     const defaultQueryParam = {
-      studyId: "1.3.6.1.4.1.14519.5.2.1.305325883567200266208362634462271985015",
-      serieId: "1.3.6.1.4.1.14519.5.2.1.261338669895553835006858860361834392510"
+      parentStudy: "1.3.6.1.4.1.14519.5.2.1.305325883567200266208362634462271985015",
+      parentSeries: "1.3.6.1.4.1.14519.5.2.1.261338669895553835006858860361834392510",
+      groupId: "a69c11a8-44a41043-bce22781-172adef2-e51df883"
     }
 
-    const StudyInstanceUID = new URLSearchParams(window.location.search).get("StudyInstanceUID") ?? defaultQueryParam.studyId
-    const SeriesInstanceUID = new URLSearchParams(window.location.search).get("SeriesInstanceUID") ?? defaultQueryParam.serieId
+    const StudyInstanceUID = new URLSearchParams(window.location.search).get("parentStudy") ?? defaultQueryParam.parentStudy
+    const SeriesInstanceUID = new URLSearchParams(window.location.search).get("parentSeries") ?? defaultQueryParam.parentSeries
+    const groupId = new URLSearchParams(window.location.search).get("groupId") ?? defaultQueryParam.groupId
 
     window.StudyInstanceUID = StudyInstanceUID
     window.SeriesInstanceUID = SeriesInstanceUID
-
+    window.groupId = groupId
   </script>
 
   <title>Vite + React + TS</title>

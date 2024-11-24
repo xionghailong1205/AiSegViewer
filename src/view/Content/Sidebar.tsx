@@ -4,12 +4,11 @@ import { AiSegHelperButton } from '@/ButtonFactory/group1/AiSegHelper'
 import { ToolButton } from '@/ButtonFactory/ButtonClass'
 import clsx from 'clsx'
 import Segmentation from '@/Icons/AnnotationTool/segmentation'
-import { Button } from '@/view/ui/button'
+import { Button } from '@/ui/button'
 import { SegInfo, useSegListService } from '@/store/useSegListService'
 import { getSEGService } from '@/service/segService'
-import { Trash } from '@/Icons/FunctionButton'
-import { Spinner } from '../ui/spinner'
-
+import { Spinner } from '@/ui/spinner'
+import { useToast } from '@/hooks/use-toast';
 
 const Sidebar = () => {
     return (
@@ -149,6 +148,8 @@ const SegInfoBox = ({
     segId,
     status
 }: SegInfo) => {
+    const { toast } = useToast()
+
     switch (status) {
         case ("compelete"): {
             return (
@@ -193,7 +194,12 @@ const SegInfoBox = ({
                         <Button
                             onClick={() => {
                                 useSegListService.getState().removeSeg(segId)
-                                getSEGService().removeSeg(segId)
+                                getSEGService().removeSeg(segId).then(message => {
+                                    toast({
+                                        title: "删除切割结果",
+                                        description: message,
+                                    })
+                                })
                             }}
                             style={{
                                 padding: "0px",
@@ -245,6 +251,41 @@ const SegInfoBox = ({
                             }}
                         >
                             {`Processing: ${segId}`}
+                        </div>
+                    </div>
+                </div >
+            )
+        }
+        case ("loading"): {
+            return (
+                <div
+                    style={{
+                        display: "flex",
+                        gap: "10px",
+                        padding: "10px 5px",
+                        border: "1px dotted gray",
+                        justifyContent: "center"
+                    }}
+                >
+                    <div
+                        className='center'
+                    >
+                        <Spinner />
+                    </div>
+                    <div
+                        style={{
+                            flex: 1,
+                        }}
+                        className='center'
+                    >
+                        <div
+                            style={{
+                                overflow: "hidden",
+                                maxHeight: "50px",
+                                wordBreak: "break-all"
+                            }}
+                        >
+                            {`Loading: ${segId}`}
                         </div>
                     </div>
                 </div >

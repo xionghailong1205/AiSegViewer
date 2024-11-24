@@ -23,7 +23,11 @@ import RectangleToolForAISeg from "@/cornerstoneTools/RectangleToolForAISeg";
 import { DataForSegAI, doSegAndGetResult } from "@/mock/doSegAndGetResult";
 import { config } from "@/config/config";
 import { TemporaryVolumeManager } from "./temporaryVolume";
-import { useSegListService } from "@/store/useSegListService";
+import {
+  SegInfoFromServer,
+  useSegListService,
+} from "@/store/useSegListService";
+import { Network } from "./network";
 
 export interface SegInfoForAddSeg {
   studyId: string;
@@ -368,30 +372,48 @@ class SEGService {
     });
   }
 
-  registerEventListener() {
-    const mprViewportIdList = Object.values(viewportIds.MPR);
-
-    mprViewportIdList.forEach((viewportId) => {
-      document.getElementById(viewportId) as HTMLDivElement;
-    });
-  }
-
   private _generateRandomScalar() {
     return Math.floor(Math.random() * 255);
   }
 
   // dataForSegAI: DataForSegAI 暂时不需要
   async createSegTask(segData: DataForSegAI, idOfSelectedAnnotation: string) {
-    console.log(segData);
-
-    useSegListService.getState().addNewTask();
+    const taskId = useSegListService.getState().addNewTask();
     // 在这里进行请求
 
     annotation.state.removeAnnotation(idOfSelectedAnnotation);
     this.renderingEngine.render();
+
+    await Network.createSegTask(segData)
+      .then((result) => {
+        useSegListService.getState().removeSeg(taskId);
+        const segInfoFromServer = result.data;
+        const segInfo = {
+          studyId: segInfoFromServer.ParentStudy,
+          serieId: segInfoFromServer.ParentSeries,
+          segId: segInfoFromServer.ID,
+        };
+
+        const loadInfo = this.requestSegImage(segInfo);
+        this.addSegIntoViewport(loadInfo.segInfo, loadInfo.loadingId);
+      })
+      .then(() => {
+        // 之后添加错误处理在这个位置
+        return "切割成功.";
+      });
   }
 
-  async addSeg(segInfo: SegInfoForAddSeg) {
+  requestSegImage(segInfo: SegInfoForAddSeg) {
+    const loadingId = useSegListService.getState().addNewLoading();
+    console.log("loadingId:", loadingId);
+
+    return {
+      segInfo,
+      loadingId,
+    };
+  }
+
+  async addSegIntoViewport(segInfo, loadingId) {
     const segmentationId = segInfo.segId;
 
     // 我们在这里初始化我们的 seg volume
@@ -450,7 +472,9 @@ class SEGService {
           temporaryVolumeManger.destoryVolume();
 
           // 我们在这个位置去调用 UI 中的
-          useSegListService.getState().addNewSeg(segmentationId);
+          useSegListService
+            .getState()
+            .addNewSegAfterLoading(loadingId, segmentationId);
 
           // 删除所有的 分割矩形
           segmentation.addSegmentationRepresentations(
@@ -476,21 +500,7 @@ class SEGService {
     });
   }
 
-  generateSurface() {
-    segmentation.addSegmentationRepresentations(viewportIds.SURFACE.CORONAL, [
-      {
-        segmentationId: this.segmentationId,
-        type: SegmentationRepresentations.Surface,
-        options: {
-          polySeg: {
-            enabled: true,
-          },
-        },
-      },
-    ]);
-  }
-
-  removeSeg(segmentationId) {
+  async removeSeg(segmentationId) {
     segmentation.removeSegmentation(segmentationId);
 
     segmentation.removeSurfaceRepresentation(
@@ -505,8 +515,12 @@ class SEGService {
     this.renderingEngine
       .getViewport(viewportIds.SURFACE.CORONAL)
       .removeAllActors();
-  }
 
+    await Network.deleteSegResultOnServer(segmentationId);
+
+    // 之后根据实际状态在这里做一些修改
+    return "删除成功";
+  }
   getOriginCoordinate(): Types.Point2 {
     if (!this.originCoordinate) {
       const imageData = this.renderingEngine

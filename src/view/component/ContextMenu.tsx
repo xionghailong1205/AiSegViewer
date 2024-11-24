@@ -2,6 +2,7 @@
 import { ControlledMenu, MenuItem } from '@szhsin/react-menu';
 import { annotation } from '@cornerstonejs/tools';
 import { useContextMenuService } from '@/store/useContextMenuService';
+import { useToast } from '@/hooks/use-toast';
 
 const closeContextMenu = useContextMenuService.getState().closeContextMenu
 const removeSelectedAnnotation = useContextMenuService.getState().removeSelectedAnnotation
@@ -35,6 +36,8 @@ export const ContextMenu = () => {
 }
 
 const AiSegButton = () => {
+    const { toast } = useToast()
+
     // 判断是否右击了 rec ai helper 
     const isRecAiHelper = (() => {
         const annotationId = useContextMenuService.getState().idOfSelectedAnnotation
@@ -54,7 +57,12 @@ const AiSegButton = () => {
                         onClick={() => {
                             // 进行 AI 分割的接口
                             const doAiSeg = useContextMenuService.getState().doAiSeg
-                            doAiSeg()
+                            doAiSeg().then(message => {
+                                toast({
+                                    title: "创建切割任务 ",
+                                    description: message,
+                                })
+                            })
                         }}
                     >
                         进行AI分割

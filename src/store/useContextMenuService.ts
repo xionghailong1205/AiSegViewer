@@ -25,7 +25,7 @@ interface action {
   ) => void;
   closeContextMenu: () => void;
   removeSelectedAnnotation: () => void;
-  doAiSeg: () => void;
+  doAiSeg: () => Promise<string>;
   apiTest: () => void;
 }
 
@@ -56,7 +56,7 @@ export const useContextMenuService = create<ContextMenuServiceProp>(
 
       renderingEngine.render();
     },
-    doAiSeg() {
+    async doAiSeg() {
       const idOfSelectedAnnotation = get().idOfSelectedAnnotation;
 
       const segService = getSEGService();
@@ -89,7 +89,7 @@ export const useContextMenuService = create<ContextMenuServiceProp>(
       const width = Math.abs(bottomLeftPoint[0] - topRightPoint[0]);
       const height = Math.abs(bottomLeftPoint[1] - topRightPoint[1]);
 
-      segService.createSegTask(
+      const message = await segService.createSegTask(
         {
           referenceStudyUID: StudyInstanceUID,
           sliceIndex,
@@ -100,6 +100,8 @@ export const useContextMenuService = create<ContextMenuServiceProp>(
         },
         idOfSelectedAnnotation
       );
+
+      return message;
     },
     // 我们在这里做一个简单 API 测试起
     apiTest() {
