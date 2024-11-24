@@ -5,6 +5,7 @@ import { getSEGService } from "@/service/segService";
 import Content from "@/view/Content/Content";
 import List from "@/view/List";
 import { ContextMenu } from "@/view/component/ContextMenu";
+import { useSegListService } from "./store/useSegListService";
 
 function App() {
   const running = useRef(false);
@@ -22,6 +23,7 @@ function App() {
         const SEGService = getSEGService();
         setTimeout(() => {
           SEGService.initSegMode();
+          useSegListService.getState().updateSegList()
         }, 1000);
       });
     };

@@ -34,7 +34,7 @@ export class ToolButton {
       case toolType.OperatingTool: {
         console.log("代码执行");
         // setToolActiveOnPrimaryMouseButton(this.bindingTool);
-        alert("之后设计逻辑");
+        // alert("之后设计逻辑");
         break;
       }
       case toolType.FunctionTool: {

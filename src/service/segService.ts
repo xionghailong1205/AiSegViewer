@@ -25,6 +25,12 @@ import { config } from "@/config/config";
 import { TemporaryVolumeManager } from "./temporaryVolume";
 import { useSegListService } from "@/store/useSegListService";
 
+export interface SegInfoForAddSeg {
+  studyId: string;
+  serieId: string;
+  segId: string;
+}
+
 const { triggerSegmentationDataModified } =
   segmentation.triggerSegmentationEvents;
 
@@ -200,70 +206,83 @@ class SEGService {
     cornerstoneTools.addTool(RectangleToolForAISeg);
     cornerstoneTools.addTool(TrackballRotateTool);
 
-    const toolGroupList = [this.viewToolGroup, this.segToolGroup];
+    this._initSegViewport();
+    this._initSurfaceViewport();
+    this._initViewViewport();
+  }
 
-    toolGroupList.forEach((toolGroup) => {
-      toolGroup.addTool(PanTool.toolName);
-      toolGroup.addTool(ZoomTool.toolName);
-      toolGroup.addTool(StackScrollTool.toolName);
+  private _initViewViewport() {
+    const toolGroup = this.viewToolGroup;
 
-      toolGroup.setToolActive(ZoomTool.toolName, {
-        bindings: [
-          {
-            mouseButton: MouseBindings.Secondary,
-          },
-        ],
-      });
+    toolGroup.addTool(PanTool.toolName);
+    toolGroup.addTool(ZoomTool.toolName);
+    toolGroup.addTool(StackScrollTool.toolName);
 
-      toolGroup.setToolActive(PanTool.toolName, {
-        bindings: [
-          {
-            mouseButton: MouseBindings.Auxiliary,
-          },
-        ],
-      });
+    // 中键
+    toolGroup.setToolActive(PanTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Auxiliary,
+        },
+      ],
+    });
 
-      if (toolGroup.id === this.segToolGroupId) {
-        toolGroup.addTool(RectangleToolForAISeg.toolName);
+    // 左键
+    toolGroup.setToolActive(StackScrollTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary,
+        },
+        {
+          mouseButton: MouseBindings.Wheel,
+        },
+      ],
+    });
 
-        toolGroup.setToolActive(RectangleToolForAISeg.toolName, {
-          bindings: [
-            {
-              mouseButton: MouseBindings.Primary,
-            },
-          ],
-        });
-
-        toolGroup.setToolActive(StackScrollTool.toolName, {
-          bindings: [
-            {
-              mouseButton: MouseBindings.Wheel,
-            },
-          ],
-        });
-      } else {
-        toolGroup.setToolActive(StackScrollTool.toolName, {
-          bindings: [
-            {
-              mouseButton: MouseBindings.Primary,
-            },
-            {
-              mouseButton: MouseBindings.Wheel,
-            },
-          ],
-        });
-      }
+    // 右键
+    toolGroup.setToolActive(ZoomTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Secondary,
+        },
+      ],
     });
 
     [viewportIds.MPR.CORONAL, viewportIds.MPR.SAGITTAL].forEach(
       (viewportId) => {
-        this.viewToolGroup.addViewport(viewportId);
+        toolGroup.addViewport(viewportId);
       }
     );
+  }
 
-    this.ToolGroup3D.addTool(TrackballRotateTool.toolName);
+  private _initSegViewport() {
+    const toolGroup = this.segToolGroup;
 
-    this.ToolGroup3D.setToolActive(TrackballRotateTool.toolName, {
+    toolGroup.addTool(PanTool.toolName);
+    toolGroup.addTool(ZoomTool.toolName);
+    toolGroup.addTool(StackScrollTool.toolName);
+    toolGroup.addTool(RectangleToolForAISeg.toolName);
+
+    // 右键
+    toolGroup.setToolActive(ZoomTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Secondary,
+        },
+      ],
+    });
+
+    // 中键
+    toolGroup.setToolActive(PanTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Auxiliary,
+        },
+      ],
+    });
+
+    // 左键
+    toolGroup.setToolActive(RectangleToolForAISeg.toolName, {
       bindings: [
         {
           mouseButton: MouseBindings.Primary,
@@ -271,7 +290,51 @@ class SEGService {
       ],
     });
 
-    this.segToolGroup.addViewport(viewportIds.MPR.AXIAL);
+    // 滚轮
+    toolGroup.setToolActive(StackScrollTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Wheel,
+        },
+      ],
+    });
+
+    toolGroup.addViewport(viewportIds.MPR.AXIAL);
+  }
+
+  private _initSurfaceViewport() {
+    const toolGroup3D = this.ToolGroup3D;
+
+    toolGroup3D.addTool(TrackballRotateTool.toolName);
+    toolGroup3D.addTool(PanTool.toolName);
+    toolGroup3D.addTool(ZoomTool.toolName);
+
+    // 左键
+    toolGroup3D.setToolActive(TrackballRotateTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary,
+        },
+      ],
+    });
+
+    // 中键
+    toolGroup3D.setToolActive(PanTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Auxiliary,
+        },
+      ],
+    });
+
+    // 右键
+    toolGroup3D.setToolActive(ZoomTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Secondary,
+        },
+      ],
+    });
 
     this.ToolGroup3D.addViewport(viewportIds.SURFACE.CORONAL);
   }
@@ -317,93 +380,100 @@ class SEGService {
     return Math.floor(Math.random() * 255);
   }
 
-  getSegmentationId(index) {
-    return `SEG_${index}`;
-  }
-
   // dataForSegAI: DataForSegAI 暂时不需要
-  async addSegData(segData: DataForSegAI, idOfSelectedAnnotation: string) {
-    const segmentationId = crypto.randomUUID();
-
+  async createSegTask(segData: DataForSegAI, idOfSelectedAnnotation: string) {
     console.log(segData);
 
-    // // 我们在这里初始化我们的 seg volume
-    // const segmentationVolume = volumeLoader.createAndCacheDerivedLabelmapVolume(
-    //   this.MPRVolumeID,
-    //   {
-    //     volumeId: segmentationId,
-    //   }
-    // );
+    useSegListService.getState().addNewTask();
+    // 在这里进行请求
 
-    // const segVoxelManager = segmentationVolume.voxelManager;
+    annotation.state.removeAnnotation(idOfSelectedAnnotation);
+    this.renderingEngine.render();
+  }
 
-    // let temporaryVolumeManger = new TemporaryVolumeManager({
-    //   StudyInstanceUID: "2.25.192000203449462464300556352146497553955",
-    //   SeriesInstanceUID: "2.25.211740913197583156653763061616189163646",
-    // });
+  async addSeg(segInfo: SegInfoForAddSeg) {
+    const segmentationId = segInfo.segId;
 
-    // const temporaryVolume = await temporaryVolumeManger.getVolume();
+    // 我们在这里初始化我们的 seg volume
+    const segmentationVolume = volumeLoader.createAndCacheDerivedLabelmapVolume(
+      this.MPRVolumeID,
+      {
+        volumeId: segmentationId,
+      }
+    );
 
-    // segmentation.addSegmentations([
-    //   {
-    //     segmentationId,
-    //     representation: {
-    //       type: SegmentationRepresentations.Labelmap,
-    //       data: {
-    //         volumeId: segmentationId,
-    //       },
-    //     },
-    //   },
-    // ]);
+    const segVoxelManager = segmentationVolume.voxelManager;
 
-    // const segmentationRepresentation = {
-    //   segmentationId,
-    // };
+    let temporaryVolumeManger = new TemporaryVolumeManager({
+      StudyInstanceUID: segInfo.studyId,
+      SeriesInstanceUID: segInfo.serieId,
+    });
 
-    // segmentation.addLabelmapRepresentationToViewportMap({
-    //   [viewportIds.MPR.AXIAL]: [segmentationRepresentation],
-    //   [viewportIds.MPR.SAGITTAL]: [segmentationRepresentation],
-    //   [viewportIds.MPR.CORONAL]: [segmentationRepresentation],
-    // });
+    const temporaryVolume = await temporaryVolumeManger.getVolume();
 
-    // temporaryVolume.load(() => {
-    //   setTimeout(() => {
-    //     const segData =
-    //       temporaryVolume.voxelManager.getCompleteScalarDataArray();
+    segmentation.addSegmentations([
+      {
+        segmentationId,
+        representation: {
+          type: SegmentationRepresentations.Labelmap,
+          data: {
+            volumeId: segmentationId,
+          },
+        },
+      },
+    ]);
 
-    //     const randomScalar = this._generateRandomScalar();
+    const segmentationRepresentation = {
+      segmentationId,
+    };
 
-    //     segData.forEach((value, index) => {
-    //       if (value === 1) {
-    //         segVoxelManager.setAtIndex(index, randomScalar);
-    //       }
-    //     });
+    segmentation.addLabelmapRepresentationToViewportMap({
+      [viewportIds.MPR.AXIAL]: [segmentationRepresentation],
+      [viewportIds.MPR.SAGITTAL]: [segmentationRepresentation],
+      [viewportIds.MPR.CORONAL]: [segmentationRepresentation],
+    });
 
-    //     temporaryVolumeManger.destoryVolume();
+    return new Promise((resolve) => {
+      temporaryVolume.load(() => {
+        setTimeout(() => {
+          const segData =
+            temporaryVolume.voxelManager.getCompleteScalarDataArray();
 
-    //     // 我们在这个位置去调用 UI 中的
-    //     useSegListService.getState().addNewSeg(segmentationId);
-    //     alert("分割成功");
-    //     // 删除所有的 分割矩形
-    //     annotation.state.removeAnnotation(idOfSelectedAnnotation);
-    //     segmentation.addSegmentationRepresentations(
-    //       viewportIds.SURFACE.CORONAL,
-    //       [
-    //         {
-    //           segmentationId: segmentationId,
-    //           type: SegmentationRepresentations.Surface,
-    //           options: {
-    //             polySeg: {
-    //               enabled: true,
-    //             },
-    //           },
-    //         },
-    //       ]
-    //     );
+          const randomScalar = this._generateRandomScalar();
 
-    //     triggerSegmentationDataModified(segmentationId);
-    //   }, 1000);
-    // });
+          segData.forEach((value, index) => {
+            if (value === 1) {
+              segVoxelManager.setAtIndex(index, randomScalar);
+            }
+          });
+
+          temporaryVolumeManger.destoryVolume();
+
+          // 我们在这个位置去调用 UI 中的
+          useSegListService.getState().addNewSeg(segmentationId);
+
+          // 删除所有的 分割矩形
+          segmentation.addSegmentationRepresentations(
+            viewportIds.SURFACE.CORONAL,
+            [
+              {
+                segmentationId: segmentationId,
+                type: SegmentationRepresentations.Surface,
+                options: {
+                  polySeg: {
+                    enabled: true,
+                  },
+                },
+              },
+            ]
+          );
+
+          resolve(`${segmentationId}切割创建成功`);
+
+          triggerSegmentationDataModified(segmentationId);
+        }, 1000);
+      });
+    });
   }
 
   generateSurface() {

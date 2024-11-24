@@ -77,6 +77,12 @@ export default defineConfig({
           return path.replace(/^\/localDicomWeb/, "");
         },
       },
+      // "/localDicomWeb": {
+      //   target: "http://localhost:5985",
+      //   // rewrite: (path) => {
+      //   //   return path.replace(/^\/localDicomWeb/, "");
+      //   // },
+      // },
       "/dicom-web": {
         target: "https://hz-jcy-1.matpool.com:26335",
         // rewrite: (path) => {

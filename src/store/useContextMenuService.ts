@@ -89,7 +89,7 @@ export const useContextMenuService = create<ContextMenuServiceProp>(
       const width = Math.abs(bottomLeftPoint[0] - topRightPoint[0]);
       const height = Math.abs(bottomLeftPoint[1] - topRightPoint[1]);
 
-      segService.addSegData(
+      segService.createSegTask(
         {
           referenceStudyUID: StudyInstanceUID,
           sliceIndex,
