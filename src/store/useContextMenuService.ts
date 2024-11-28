@@ -1,6 +1,8 @@
 import { create } from "zustand";
-import { annotation, utilities } from "@cornerstonejs/tools";
+import { annotation } from "@cornerstonejs/tools";
 import { getSEGService, viewportIds } from "@/service/segService";
+import { scrollVolume } from "@cornerstonejs/core/utilities/scroll";
+import { VolumeViewport } from "@cornerstonejs/core";
 
 const { getAnnotationManager } = annotation.state;
 const { removeAnnotation } = annotation.state;
@@ -76,6 +78,10 @@ export const useContextMenuService = create<ContextMenuServiceProp>(
         0,
         2
       );
+      const bottomRightPoint = selectedAnnotation.data.handles.points[2].slice(
+        0,
+        2
+      );
       const bottomLeftPoint = selectedAnnotation.data.handles.points[3].slice(
         0,
         2
@@ -88,6 +94,15 @@ export const useContextMenuService = create<ContextMenuServiceProp>(
 
       const width = Math.abs(bottomLeftPoint[0] - topRightPoint[0]);
       const height = Math.abs(bottomLeftPoint[1] - topRightPoint[1]);
+
+      console.log({
+        referenceStudyUID: StudyInstanceUID,
+        sliceIndex,
+        top,
+        left,
+        width,
+        height,
+      });
 
       const message = await segService.createSegTask(
         {
@@ -106,8 +121,17 @@ export const useContextMenuService = create<ContextMenuServiceProp>(
     // 我们在这里做一个简单 API 测试起
     apiTest() {
       const segService = getSEGService();
-      const result = segService.getOriginCoordinate();
-      alert(result);
+      const segViewport = segService.renderingEngine.getViewport(
+        viewportIds.MPR.AXIAL
+      ) as VolumeViewport;
+      const volumeId = segService.MPRVolumeID;
+      const currentIndex = segViewport.getSliceIndex() + 1;
+      const jumpIndex = 36;
+
+      const delta = jumpIndex - currentIndex;
+      console.log(delta);
+
+      scrollVolume(segViewport, volumeId, delta, false);
     },
   })
 );

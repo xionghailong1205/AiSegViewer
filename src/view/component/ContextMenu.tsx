@@ -31,6 +31,7 @@ export const ContextMenu = () => {
                 删除标注
             </MenuItem>
             <AiSegButton />
+            <ApiTestButton />
         </ControlledMenu>
     )
 }
@@ -70,5 +71,19 @@ const AiSegButton = () => {
                 ) : ""
             }
         </>
+    )
+}
+
+const ApiTestButton = () => {
+    return (
+        <MenuItem
+            className="bg-[#293245] w-[130px] outline-none text-white py-[10px] px-[15px] hover:bg-[#3159d6]"
+            onClick={() => {
+                const apiTest = useContextMenuService.getState().apiTest
+                apiTest()
+            }}
+        >
+            进行 API 测试
+        </MenuItem>
     )
 }

@@ -16,7 +16,11 @@ import {
   Enums as toolEnums,
   TrackballRotateTool,
   annotation,
+  SynchronizerManager,
+  synchronizers,
+  WindowLevelTool,
 } from "@cornerstonejs/tools";
+
 import RectangleToolForAISeg from "@/cornerstoneTools/RectangleToolForAISeg";
 
 // 导入我们的 mock 接口
@@ -43,6 +47,7 @@ const { RectangleROITool, ZoomTool, StackScrollTool, PanTool } =
 
 const { ViewportType } = Enums;
 const { SegmentationRepresentations } = toolEnums;
+const { createVOISynchronizer } = synchronizers;
 
 // local
 const wadoRsRoot = config.wadoRsRoot;
@@ -74,7 +79,7 @@ export const viewportIds = {
 class SEGService {
   private StudyInstanceUID: string;
   private SeriesInstanceUID: string;
-  private MPRVolumeID: string = "MPRVolumeID";
+  MPRVolumeID: string = "MPRVolumeID";
   private segList: Array<string> = [];
   segmentationId: string = "SEGMENTATION_ID";
   segmentationVolumeId: string = "SEGMENTATION_VOLUME";
@@ -87,6 +92,7 @@ class SEGService {
   renderingEngineId: string = "myRenderingEngine";
   renderingEngine: RenderingEngine;
   isResizing: boolean = false;
+  ctVoiSynchronizerId = "VOI_SYNCHRONIZER_ID";
   resizeObserver: ResizeObserver = new ResizeObserver(() => {
     if (this.isResizing) {
       return;
@@ -130,6 +136,7 @@ class SEGService {
     this.initViewport();
     this.createToolGroupAndAddViewport();
     this.loadVolume();
+    this.setUpSynchronizes();
   }
 
   addEventListener() {}
@@ -209,6 +216,7 @@ class SEGService {
     cornerstoneTools.addTool(StackScrollTool);
     cornerstoneTools.addTool(RectangleToolForAISeg);
     cornerstoneTools.addTool(TrackballRotateTool);
+    cornerstoneTools.addTool(WindowLevelTool);
 
     this._initSegViewport();
     this._initSurfaceViewport();
@@ -266,6 +274,7 @@ class SEGService {
     toolGroup.addTool(ZoomTool.toolName);
     toolGroup.addTool(StackScrollTool.toolName);
     toolGroup.addTool(RectangleToolForAISeg.toolName);
+    toolGroup.addTool(WindowLevelTool.toolName);
 
     // 右键
     toolGroup.setToolActive(ZoomTool.toolName, {
@@ -527,10 +536,28 @@ class SEGService {
         .getViewport(viewportIds.MPR.AXIAL)
         .getImageData().imageData;
 
-      this.originCoordinate = imageData.indexToWorld([0, 512, 0]);
+      this.originCoordinate = imageData.indexToWorld([0, 0, 0]);
       return this.originCoordinate;
     } else {
       return this.originCoordinate;
     }
+  }
+
+  setUpSynchronizes() {
+    const voiSynchronizer = createVOISynchronizer(this.ctVoiSynchronizerId, {
+      syncInvertState: false,
+      syncColormap: false,
+    });
+
+    [
+      viewportIds.MPR.AXIAL,
+      viewportIds.MPR.CORONAL,
+      viewportIds.MPR.SAGITTAL,
+    ].forEach((viewportId) => {
+      voiSynchronizer.add({
+        renderingEngineId: this.renderingEngineId,
+        viewportId,
+      });
+    });
   }
 }

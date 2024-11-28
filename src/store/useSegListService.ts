@@ -99,8 +99,6 @@ export const useSegListService = create<SegListServiceProp>((set, get) => ({
     const result = await Network.getSegListOfStudy();
     const segService = getSEGService();
 
-    console.log(result);
-
     const segList: Array<SegInfoForAddSeg> = result.map(
       (segInfo: SegInfoFromServer) => {
         return {

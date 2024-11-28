@@ -9,6 +9,7 @@ import { SegInfo, useSegListService } from '@/store/useSegListService'
 import { getSEGService } from '@/service/segService'
 import { Spinner } from '@/ui/spinner'
 import { useToast } from '@/hooks/use-toast';
+import { WindowLevelToolButton } from '@/ButtonFactory/group1/WindowLevel'
 
 const Sidebar = () => {
     return (
@@ -49,6 +50,9 @@ const ToolGroup = () => {
                 <ButtonList>
                     <SidebarButton
                         tool={AiSegHelperButton}
+                    />
+                    <SidebarButton
+                        tool={WindowLevelToolButton}
                     />
                 </ButtonList>
             </div>

@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react"
 
 import { Enums, Types, metaData, utilities as coreUtilities } from "@cornerstonejs/core";
 import { registerMouseClickEventShowContextMenu } from "./utils/registerMouseClickEventShowContextMenu";
+import { Input } from "@/ui/input";
+import { Button } from "@/ui/button";
+import { jumpToSpecificIndex } from "@/utils/jumpToSpecificIndex";
 
 const registerScrollEventListener = (viewportElement: HTMLDivElement, updateImageSliceData: Function) => {
     const handleScroll = (e: Event) => {
@@ -22,6 +25,7 @@ const DicomViewport = ({ viewprotId }: {
     viewprotId: string
 }) => {
     const [currentSlice, setCurrentSlice] = useState(0)
+    const [jumpIndex, setJumpIndex] = useState(1)
 
     const ViewportContainer = useRef<HTMLDivElement>(null!)
 
@@ -62,10 +66,59 @@ const DicomViewport = ({ viewprotId }: {
                     height: "30px",
                     backgroundColor: "#aaa5a566",
                     display: "flex",
-                    justifyContent: "flex-end",
+                    justifyContent: "space-between",
                     alignItems: "center"
                 }}
             >
+                {
+                    viewprotId === "v5001" ? (
+                        <div
+                            style={{
+                                display: "flex",
+                                width: "130px",
+                            }}
+                        >
+                            <div
+
+                                style={{
+                                    flex: 1
+                                }}
+                            >
+                                <Input
+                                    type="number"
+                                    style={{
+                                        background: "white",
+                                        height: "30px"
+                                    }}
+                                    value={jumpIndex}
+                                    onChange={(e) => {
+                                        setJumpIndex(Number(e.target.value))
+                                    }}
+                                />
+                            </div>
+                            <div
+                                style={{
+                                    flex: 1,
+                                }}
+                                className="center"
+                            >
+                                <Button
+                                    style={{
+                                        padding: "0px 10px",
+                                        height: "30px",
+                                        color: "#2c2828b5"
+                                    }}
+                                    className="hover:bg-[#63c8f0d6] active:bg-[#55c1eb92] bg-[#6dc9ed92]"
+                                    onClick={() => {
+                                        jumpToSpecificIndex(jumpIndex)
+                                    }}
+                                >
+                                    跳转
+                                </Button>
+                            </div>
+                        </div>
+                    ) : ""
+                }
                 <div
                     style={{
                         paddingRight: "10px"

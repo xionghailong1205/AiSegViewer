@@ -1,5 +1,7 @@
 // import { setToolActiveOnPrimaryMouseButton } from "@/Actions/toolGroupAction";
+import { getSEGService } from "@/service/segService";
 import { SvgProp } from "./Types";
+import { Enums } from "@cornerstonejs/tools";
 
 export enum toolType {
   MeasurementTool,
@@ -32,9 +34,19 @@ export class ToolButton {
         break;
       }
       case toolType.OperatingTool: {
-        console.log("代码执行");
-        // setToolActiveOnPrimaryMouseButton(this.bindingTool);
-        // alert("之后设计逻辑");
+        const segService = getSEGService();
+        const toolGroup = segService.segToolGroup;
+        const toolActiving = toolGroup.getActivePrimaryMouseButtonTool();
+
+        toolGroup.setToolPassive(toolActiving);
+        toolGroup.setToolActive(this.bindingTool, {
+          bindings: [
+            {
+              mouseButton: Enums.MouseBindings.Primary, // Left Click
+            },
+          ],
+        });
+
         break;
       }
       case toolType.FunctionTool: {
