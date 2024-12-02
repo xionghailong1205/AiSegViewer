@@ -31,7 +31,7 @@ export const ContextMenu = () => {
                 删除标注
             </MenuItem>
             <AiSegButton />
-            <ApiTestButton />
+            {/* <ApiTestButton /> */}
         </ControlledMenu>
     )
 }

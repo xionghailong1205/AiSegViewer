@@ -139,8 +139,6 @@ class SEGService {
     this.setUpSynchronizes();
   }
 
-  addEventListener() {}
-
   private initViewport() {
     const renderingEngine = this.renderingEngine;
 

@@ -67,7 +67,7 @@ export const useContextMenuService = create<ContextMenuServiceProp>(
         viewportIds.MPR.AXIAL
       )!;
 
-      const sliceIndex = axialViewport.getCurrentImageIdIndex();
+      const sliceIndex = axialViewport.getSliceIndex();
 
       const annotationManager = getAnnotationManager();
       const selectedAnnotation = annotationManager.getAnnotation(
