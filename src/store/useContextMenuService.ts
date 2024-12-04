@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { annotation } from "@cornerstonejs/tools";
 import { getSEGService, viewportIds } from "@/service/segService";
 import { scrollVolume } from "@cornerstonejs/core/utilities/scroll";
-import { VolumeViewport } from "@cornerstonejs/core";
+import { RenderingEngine, VolumeViewport } from "@cornerstonejs/core";
+import { transformWorldToIndex } from "@cornerstonejs/core/utilities";
 
 const { getAnnotationManager } = annotation.state;
 const { removeAnnotation } = annotation.state;
@@ -67,30 +68,29 @@ export const useContextMenuService = create<ContextMenuServiceProp>(
         viewportIds.MPR.AXIAL
       )!;
 
-      const sliceIndex = axialViewport.getSliceIndex();
+      const sliceIndex = axialViewport.getCurrentImageIdIndex() + 1;
 
       const annotationManager = getAnnotationManager();
       const selectedAnnotation = annotationManager.getAnnotation(
         idOfSelectedAnnotation
       );
 
-      const topRightPoint = selectedAnnotation.data.handles.points[0].slice(
-        0,
-        2
-      );
-      const bottomRightPoint = selectedAnnotation.data.handles.points[2].slice(
-        0,
-        2
-      );
-      const bottomLeftPoint = selectedAnnotation.data.handles.points[3].slice(
-        0,
-        2
+      const { imageData } = segService.renderingEngine
+        .getViewport("v5001")
+        .getImageData();
+
+      const topRightPoint = transformWorldToIndex(
+        imageData,
+        selectedAnnotation.data.handles.points[0]
       );
 
-      const originCoordinate = segService.getOriginCoordinate();
+      const bottomLeftPoint = transformWorldToIndex(
+        imageData,
+        selectedAnnotation.data.handles.points[3]
+      );
 
-      const left = Math.abs(topRightPoint[0] - originCoordinate[0]);
-      const top = Math.abs(topRightPoint[1] - originCoordinate[1]);
+      const left = topRightPoint[0];
+      const top = topRightPoint[1];
 
       const width = Math.abs(bottomLeftPoint[0] - topRightPoint[0]);
       const height = Math.abs(bottomLeftPoint[1] - topRightPoint[1]);

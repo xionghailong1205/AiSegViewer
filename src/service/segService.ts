@@ -16,9 +16,9 @@ import {
   Enums as toolEnums,
   TrackballRotateTool,
   annotation,
-  SynchronizerManager,
   synchronizers,
   WindowLevelTool,
+  CrosshairsTool,
 } from "@cornerstonejs/tools";
 
 import RectangleToolForAISeg from "@/cornerstoneTools/RectangleToolForAISeg";
@@ -86,9 +86,11 @@ class SEGService {
   viewToolGroupId: string = "VIEW_TOOLGROUPID";
   segToolGroupId: string = "SEG_TOOLGROUPID";
   ToolGroup3DId: string = "3D_TOOLGROUPID";
+  crosshairToolGroupId: string = "CROSSHAIR_TOOLGROUPID";
   viewToolGroup: cornerstoneTools.Types.IToolGroup;
   segToolGroup: cornerstoneTools.Types.IToolGroup;
   ToolGroup3D: cornerstoneTools.Types.IToolGroup;
+  crosshairToolGroup: cornerstoneTools.Types.IToolGroup;
   renderingEngineId: string = "myRenderingEngine";
   renderingEngine: RenderingEngine;
   isResizing: boolean = false;
@@ -114,6 +116,9 @@ class SEGService {
     this.viewToolGroup = ToolGroupManager.createToolGroup(this.viewToolGroupId);
     this.segToolGroup = ToolGroupManager.createToolGroup(this.segToolGroupId);
     this.ToolGroup3D = ToolGroupManager.createToolGroup(this.ToolGroup3DId);
+    this.crosshairToolGroup = ToolGroupManager.createToolGroup(
+      this.crosshairToolGroupId
+    );
 
     const StudyInstanceUID = this.StudyInstanceUID;
     const SeriesInstanceUID = this.SeriesInstanceUID;
@@ -215,10 +220,12 @@ class SEGService {
     cornerstoneTools.addTool(RectangleToolForAISeg);
     cornerstoneTools.addTool(TrackballRotateTool);
     cornerstoneTools.addTool(WindowLevelTool);
+    cornerstoneTools.addTool(CrosshairsTool);
 
     this._initSegViewport();
     this._initSurfaceViewport();
     this._initViewViewport();
+    this._initCrosshair();
   }
 
   private _initViewViewport() {
@@ -311,6 +318,20 @@ class SEGService {
     });
 
     toolGroup.addViewport(viewportIds.MPR.AXIAL);
+  }
+
+  private _initCrosshair() {
+    const toolGroup = this.crosshairToolGroup;
+
+    toolGroup.addTool(CrosshairsTool.toolName);
+
+    // [
+    //   (viewportIds.MPR.CORONAL,
+    //   viewportIds.MPR.SAGITTAL,
+    //   viewportIds.MPR.AXIAL),
+    // ].forEach((viewportId) => {
+    //   toolGroup.addViewport(viewportId);
+    // });
   }
 
   private _initSurfaceViewport() {
@@ -527,18 +548,6 @@ class SEGService {
 
     // 之后根据实际状态在这里做一些修改
     return "删除成功";
-  }
-  getOriginCoordinate(): Types.Point2 {
-    if (!this.originCoordinate) {
-      const imageData = this.renderingEngine
-        .getViewport(viewportIds.MPR.AXIAL)
-        .getImageData().imageData;
-
-      this.originCoordinate = imageData.indexToWorld([0, 0, 0]);
-      return this.originCoordinate;
-    } else {
-      return this.originCoordinate;
-    }
   }
 
   setUpSynchronizes() {

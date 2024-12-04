@@ -19,6 +19,7 @@ import {
   drawing,
   utilities,
 } from "@cornerstonejs/tools";
+import { transformWorldToIndex } from "@cornerstonejs/core/utilities";
 
 const getViewportIdsWithToolToRender =
   utilities.viewportFilters.getViewportIdsWithToolToRender;
@@ -726,8 +727,8 @@ function defaultGetTextLines(data, viewport): string[] {
   const topRightPoint = points[0].slice(0, 2);
   const bottomLeftPoint = points[3].slice(0, 2);
 
-  textLines.push(`右上角点: ${roundNumber(topRightPoint)}`);
-  textLines.push(`左下角点: ${roundNumber(bottomLeftPoint)}`);
+  // textLines.push(`右上角点: ${roundNumber(topRightPoint)}`);
+  // textLines.push(`左下角点: ${roundNumber(bottomLeftPoint)}`);
 
   return textLines;
 }
