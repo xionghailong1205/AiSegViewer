@@ -8,8 +8,8 @@ const baseURL =
 
 export const config = {
   // dev
-  wadoRsRoot: `${baseURL}/localDicomWeb`,
+  // wadoRsRoot: `${baseURL}/localDicomWeb`,
   // produce
-  // wadoRsRoot: `${baseURL}/onlineDicomweb`,
+  wadoRsRoot: `${baseURL}/onlineDicomweb`,
   aiSegServiceBaseURL: "https://hz-jcy-1.matpool.com:26335",
 };
