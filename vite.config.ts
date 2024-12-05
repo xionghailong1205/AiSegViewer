@@ -68,6 +68,7 @@ export default defineConfig({
       "/onlineDicomweb": {
         target: "http://38.12.43.20:8042/",
         rewrite: (path) => {
+          console.log(path);
           return path.replace(/^\/onlineDicomweb/, "dicom-web");
         },
       },
